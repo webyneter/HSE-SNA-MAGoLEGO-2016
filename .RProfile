@@ -1,0 +1,4 @@
+setwd("D:/Clouds/Mail.ru/HSE/Courses/Social Network Analysis/4 module/Homework")
+
+library("igraph", lib.loc="~/R/win-library/3.2")
+library("ggplot2", lib.loc="~/R/win-library/3.2")
