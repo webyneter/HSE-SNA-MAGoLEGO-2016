@@ -1,0 +1,220 @@
+---
+title: "Social Network Analysis <br/> Home Assignment 3"
+author: 'Shupeyko Nikita'
+date: "due date - 05.06.2016 23:59"
+output:
+  pdf_document:
+    latex_engine: xelatex
+    toc: yes
+  html_document:
+    toc: yes
+---
+# Network communities
+
+```{r, message = F, echo = F, warning = F}
+
+library(igraph)
+library(xtable)
+options(xtable.comment = F)
+
+```
+
+## Yahoo Music Network
+
+For this assignment, you have to load [the part of Yahoo Music Network](https://drive.google.com/file/d/0Bwd5a7NScgMtNElfOFdSbE1UYnM/view). Archive contains network in GML format and corresponding list of artists.
+
+```{r}
+
+yg.f = "music2K.gml"
+yg = read.graph(yg.f, format = c("gml"))
+
+```
+
+Edges in this network appear if enough number of users have given ratings to both music bands. Note, that edges are weighted with similarity of the ratings.
+
+
+
+### 1. Preprocessing
+
+This network needs to be preprocessed. Do the steps, described on seminar, to make it look properly. How many vertices and edges were deleted?
+
+```{r, results = "asis", fig.width = 10, fig.height = 10}
+
+# Deleting isolated nodes.
+yg.isolated.vertices= V(yg)[degree(yg) == 0]
+yg.delete.vertices.diff = vcount(yg)
+yg = delete.vertices(yg, degree(yg) == 0)
+yg.delete.vertices.diff = yg.delete.vertices.diff - vcount(yg)
+paste("Deleted vertex count: ", yg.delete.vertices.diff)
+
+# Simplifying the graph's overall structure
+# (get rid of loops and multiedges).
+yg.deleted.edge.diff = ecount(yg)
+yg = simplify(yg)
+yg.deleted.edge.diff = yg.deleted.edge.diff - ecount(yg)
+paste("Deleted edge count: ", yg.deleted.edge.diff)
+
+# Obtaining descriptives.
+func_print.graph.descriptives = function(g) {
+  g.n = vcount(g)
+  g.m = ecount(g)
+  g.dens = graph.density(g)
+  g.avgdeg = 2 * g.m / g.n
+  g.avgpathlen = average.path.length(g)
+  g.diam = diameter(g)
+  tbl = rbind(g.n,
+              g.m,
+              g.dens,
+              g.avgdeg,
+              g.avgpathlen,
+              g.diam)
+  rownames(tbl) = c("Node count",
+                    "Edge count",
+                    "Network Density",
+                    "Average Node Degree",
+                    "Average Path Length",
+                    "Diameter")
+  colnames(tbl) = c("Value")
+  print(xtable(tbl),
+        type = "latex",
+        floating = T, 
+        include.rownames = T,
+        latex.environments = "center")
+}
+func_print.graph.descriptives(yg)
+
+
+func_plot.graph.shortestpathsdistribution = function(g) {
+  g.plh = path.length.hist(g)$res
+  g.plh.tbl = as.table(g.plh)
+  names(g.plh.tbl) = 1:length(g.plh.tbl)
+  g.plh.bp = barplot(g.plh.tbl, 
+                     main = "Shortest Path Length Distribution",
+                     xlab = "Path length",
+                     ylab = "Paths total")
+  text(x = g.plh.bp, 
+       y = g.plh, 
+       label = g.plh, 
+       cex = 0.8, 
+       pos = 3)
+}
+func_plot.graph.shortestpathsdistribution(yg)
+
+```
+
+
+
+### 2. Clustering
+
+Define clusters for this networks using one of the algorithms described on lectures and seminars. Compute density of obtained clusters:
+
+```{r, results = "asis"}
+
+# Thanks to its speed on large graphs, the Louvain algorithm is used 
+# to reveal communities in the given network.
+yg.communities = multilevel.community(yg)
+yg.communities.count = length(groups(yg.communities))
+
+# yg.communities.as.subgraphs = c()
+yg.communities.as.subgraphs = vector("list", yg.communities.count)
+for (i in seq_along(yg.communities.as.subgraphs)) { 
+    yg.communities.as.subgraphs[[i]] = induced.subgraph(yg, yg.communities$membership == i)
+}
+
+yg.community.densities = vector("list", yg.communities.count)
+for (i in seq_along(yg.community.densities)) {
+  yg.community.densities[[i]] = graph.density(yg.communities.as.subgraphs[[i]])
+}
+yg.community.names = vector("list", yg.communities.count)
+for (i in seq_along(yg.community.names)) {
+  yg.community.names[[i]] = paste("Community #", i)
+}
+
+tbl = cbind(as.matrix(yg.community.names),
+            as.matrix(yg.community.densities))
+colnames(tbl) = c("", "Density")
+tbl = xtable(tbl)
+align(tbl) = "c|r|c"
+print(tbl, 
+      floating = T, 
+      type = "latex",
+      include.rownames = F,
+      latex.environments = "center")
+
+```
+
+Compute the ratio of inner clusters connections to outer ones:
+
+```{r, results = "asis"}
+
+yg.m = ecount(yg)
+yg.community.inoutratios = vector("list", yg.communities.count)
+for (i in seq_along(yg.community.inoutratios)) {
+  c = yg.communities.as.subgraphs[[i]]
+  c.m = ecount(c)
+  yg.community.inoutratios[[i]] = c.m / ( yg.m - c.m )
+}
+
+tbl = cbind(as.matrix(yg.community.names),
+            as.matrix(yg.community.inoutratios))
+colnames(tbl) = c("", "Inner-Outer Connections Ratio")
+tbl = xtable(tbl)
+digits(tbl) = c(0, 0, 4)
+align(tbl) = "c|r|c"
+print(tbl, 
+      floating = T, 
+      type = "latex",
+      include.rownames = F,
+      latex.environments = "center")
+
+```
+
+
+
+### 3. Visualization & interpretation
+
+Visulize five of the most dense clusters. Use names of artists as node labels on the graph.
+
+```{r, fig.width = 10, fig.height = 10}
+
+yg.artists = scan("artists.txt", what = character(), sep = "\n")
+yg.artists = yg.artists[-yg.isolated.vertices]
+V(yg)$label = yg.artists
+
+func_top.N.indecies = function(l, N) {
+  l = unlist(l)
+  N = as.integer(N)
+  which( l > sort(l)[ length(l)-N ] )
+}
+
+yg.communities.top.5.density.indecies = func_top.N.indecies(yg.community.densities, 5)
+yg.communities.top.5.density = yg.communities[yg.communities.top.5.density.indecies]
+yg.vertices.in.communities.top.5.density = V(yg)[yg.communities$membership %in% yg.communities.top.5.density.indecies] 
+
+# palette()
+crp = colorRampPalette(c("red", "blue", "yellow", "pink", "maroon"))(5)
+for (v.i in yg.vertices.in.communities.top.5.density) {
+  V(yg)[v.i]$color = crp[which( yg.communities.top.5.density.indecies == yg.communities$membership[v.i] )]
+  V(yg)[v.i]$label = yg.artists[v.i]
+}
+
+yg.subgraph.vertices.in.communities.top.5.density = induced.subgraph(yg, yg.vertices.in.communities.top.5.density)
+
+# V(yg.subgraph.vertices.in.communities.top.5.density)$color = 7
+plot(yg.subgraph.vertices.in.communities.top.5.density)
+
+```
+
+<b> (Extra task) </b>Try to interpret (using Wikipedia or other resources) obtained clusters.
+
+Artist clusters colored by genre:
+
+*Sky Blue* --- **Pop/Folk**;
+
+*Blue* --- **Jazz/Blues**;
+
+*Dark Green*--- **Gospel**;
+
+*Orange* --- **Electro/Hip-hop/Dance**
+
+*Yellow* --- **Rock/Punk-rock**
