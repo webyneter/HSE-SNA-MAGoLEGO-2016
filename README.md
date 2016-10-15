@@ -13,3 +13,5 @@ Authored and given by [Leonid Zhukov](http://www.leonidzhukov.net/). Seminars he
 2. [Graph Models. Centrality Metrics](Task2) ([Solution](Task2/Task2.pdf)).
 3. [Network Communities](Task3) ([Solution](Task3/Task3.pdf)).
 4. [Network Epidemics](Task4) ([Solution](Task4/Task4.pdf)).
+
+*Produced in RStudio. Solutions are represented as R Markdown documents comprising R code chunks along with LaTeX comments.*
