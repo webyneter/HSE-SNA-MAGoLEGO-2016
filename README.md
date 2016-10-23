@@ -1,4 +1,4 @@
-# hse-sna-magolego-2016
+# HSE-SNA-MAGoLEGO-2016
 Social Network Analysis Spring 2016 HSE MAGoLEGO course homework
 
 [Reference page](http://www.leonidzhukov.net/hse/2016/sna/).
