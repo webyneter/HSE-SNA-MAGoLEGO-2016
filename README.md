@@ -11,7 +11,7 @@ Authored and given by [Leonid Zhukov](http://www.leonidzhukov.net/). Seminars he
 
 ## Assignments
 
-1. [Power Law. Descriptive Network Analysis](Task1) ([Solution](Task1/Task1.pdf)).
-2. [Graph Models. Centrality Metrics](Task2) ([Solution](Task2/Task2.pdf)).
-3. [Network Communities](Task3) ([Solution](Task3/Task3.pdf)).
-4. [Network Epidemics](Task4) ([Solution](Task4/Task4.pdf)).
+1. [Power Law. Descriptive Network Analysis](Assignment1) ([Solution](Assignment1/Assignment1.pdf)).
+2. [Graph Models. Centrality Metrics](Assignment2) ([Solution](Assignment2/Assignment2.pdf)).
+3. [Network Communities](Assignment3) ([Solution](Assignment3/Assignment3.pdf)).
+4. [Network Epidemics](Assignment4) ([Solution](Assignment4/Assignment4.pdf)).
